@@ -1,0 +1,34 @@
+Explication des changements appliqués dans server.js
+===================================================
+
+Contexte
+--------
+Le modele de donnees a evolue de `nutrition` vers `gaz` pour les mesures de zone.
+L'objectif est de:
+- stocker et exposer `gaz` partout,
+- rester compatible avec les anciennes bases SQLite qui ont encore `nutrition` / `thresholdNutrition`.
+
+Changements effectues
+---------------------
+1) Renommage fonctionnel vers `gaz`
+   - Les routes et historiques utilisent desormais `gaz` et `thresholdgaz`.
+   - Les reponses API envoient `gaz`.
+
+2) Compatibilite base existante (migration douce)
+   - Au demarrage, le serveur verifie les colonnes via `PRAGMA table_info`.
+   - Si `gaz` ou `thresholdgaz` manquent, elles sont ajoutees.
+   - Si des colonnes legacy existent (`nutrition`, `thresholdNutrition`), leurs valeurs sont recopiees vers `gaz`/`thresholdgaz` via `COALESCE(...)`.
+
+3) Historique et snapshots
+   - `zones_history` et `zones_periodic_history` sont aussi alignes sur `gaz`.
+   - Les anciennes colonnes `nutrition` restent lues uniquement pour migration, sans casser l'existant.
+
+Validation
+----------
+- Verification syntaxique Node.js: `node --check server.js`
+
+Etapes recommandees
+-------------------
+1) Relancer le serveur Node.js.
+2) Verifier `/dashboard` et `/history` pour confirmer la presence de `gaz`.
+3) Cote Flutter, utiliser `gaz` (et `thresholdgaz`) au lieu de `nutrition`.
